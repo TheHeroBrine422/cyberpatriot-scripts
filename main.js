@@ -1,25 +1,48 @@
 /*
 TODO:
-User checks (/etc/passwd and /etc/groups and /home)
+Test everything. Need a new Ubuntu test VM.
 Program checks (dpkg and apt)
 Auto Updates (only possible through GUI AFAIK) and security upgrades
-apt upgrade and apt dist-upgrade
-https://github.com/CISOfy/Lynis
 */
 
+// options:
 let you = "hero"
 let admins = [you, ""]
-let users = [admins..., ""]
-let password = "Cyb3rPatr!0t$"
+let standardUsers = [""]
+let OS = "ubuntu" // Options: 'ubuntu' or 'debian'
+// Still options, but not needed to change:
+let password = "Cyb3rPatr!0t$" // this password is a bit short.
+let prohibitedSoftware = [] // TODO: find a good list for this.
+let prohibitedFiles = [".mp4", ".mp3"] // TODO: find a good list for this.
+let debug = true // currently makes simpleExec log all stdout
 
+
+// code:
 const { exec } = require('child_process');
 const fs = require('fs')
+const path = require("path");
+
+let allUsers = admins.join(standardUsers);
+let uids = [];
+let files = []
+let badFiles = [];
+
+async function findFiles(Directory) { // https://stackoverflow.com/a/63111390
+  fs.readdirSync(Directory).forEach(File => {
+      const absolute = path.join(Directory, File);
+      if (fs.statSync(absolute).isDirectory()) return await ThroughDirectory(absolute);
+      else return files.push(absolute);
+  });
+}
 
 async function simpleExec(cmd) {
-  return await exec('sudo su -', (err, stdout, stderr) => {
+  return await exec(cmd, (err, stdout, stderr) => {
     if (err) {
       console.log(stderr)
       return ""
+    }
+    if (debug) {
+      console.log(stdout)
     }
     return stdout
   });
@@ -31,7 +54,7 @@ async function modifyLines(fileName, lines) {
     for (var i = 0; i < lines.length; i++) {
       found = false
       for (var j = 0; j < file.length; j++) {
-        if (file[j].includes(lines[i][0]) {
+        if (file[j].includes(lines[i][0])) {
           file[j] = lines[i][1]
           found = true
           break
@@ -47,9 +70,14 @@ async function modifyLines(fileName, lines) {
 }
 
 (async () => {
-  console.log("installing programs.")
-  await simpleExec('sudo apt-get update')
-  await simpleExec('apt-get install clamtk ufw libpam-cracklib')
+  console.log("Installing needed programs and doing system updates.")
+  await simpleExec('apt update')
+  await simpleExec('apt -y dist-upgrade') // make sure everything gets fully updated by running multiple times. This is probably excessive, but I want to triple check.
+  await simpleExec('apt -y update')
+  await simpleExec('apt -y dist-upgrade')
+  await simpleExec('apt -y install clamtk ufw libpam-cracklib git')
+  await simpleExec('apt -y update')
+  await simpleExec('apt -y dist-upgrade')
   console.log("enabling firewall.")
   await simpleExec('ufw enable')
   await simpleExec('passwd -l root')
@@ -73,7 +101,7 @@ async function modifyLines(fileName, lines) {
   ["LOG_UNKFAIL_ENAB", "LOG_UNKFAIL_ENAB YES"],
   ["SYSLOG_SU_ENAB", "SYSLOG_SU_ENAB YES"],
   ["SYSLOG_SG_ENAB", "SYSLOG_SG_ENAB YES"]])
-  await modifyLines("/etc/pam.d/common-password", [["pam_unix.so", ""], ["pam.cracklib.so",""]]) // TODO:
+  await modifyLines("/etc/pam.d/common-password", [["pam_unix.so", ""], ["pam.cracklib.so",""]]) // TODO: Need common-password formatting which needs a test vm.
   await modifyLines("/etc/pam.d/common-auth", [["pam_tally2.so", "auth required pam_tally2.so  file=/var/log/tallylog deny=3 even_deny_root unlock_time=1800"]])
   await simpleExec('Sysctl -p')
   await modifyLines("/etc/sysctl.conf", [["net.ipv4.conf.all.accept_redirects", "net.ipv4.conf.all.accept_redirects = 0"],
@@ -90,7 +118,7 @@ async function modifyLines(fileName, lines) {
   ["net.ipv6.conf.default.disable_ipv6", "net.ipv6.conf.default.disable_ipv6=1"],
   ["net.ipv6.conf.lo.disable_ipv6", "net.ipv6.conf.lo.disable_ipv6=1"]])
 
-  console.log("Programs listening to ports:\n use `sudo lsof -i :$port` to determine the program listening.")
+  console.log("Programs listening to ports:\n use `lsof -i :$port` to determine the program listening.") // TODO: not finished. Need full formattting of `ss -ln` which needs a test vm.
   ports = (await simpleExec('ss -ln')).split("\n")
   for (var i = 0; i < ports.length; i++) {
     if (ports[i].includes("127.0.0.1")) {
@@ -98,12 +126,70 @@ async function modifyLines(fileName, lines) {
     }
   }
 
+  console.log("checking user accounts")
+  passwd = await fs.readFileSync("/etc/passwd").split("\n");
+  for (let i = 0; i < passwd.length; i++) {
+    passwd[i] = passwd[i].split(':');
+
+    if (passwd[i][2] > 1000 && standardUsers.indexOf(passwd[i][0]) > -1) {
+      // standardUser; Change password and check/set admin condition.
+    } else if (passwd[i][2] > 1000 && standardUsers.indexOf(passwd[i][0]) < 0) {
+      // badUser; delete
+    } else if (passwd[i][2] < 1000 && standardUsers.indexOf(passwd[i][0]) > -1) {
+      // uh user has odd uid but is valid. Print to console and tell me to deal with it.
+    } else {
+      // system account. Make sure shell is /sbin/nologin
+    }
+    
+    passwd[i] = passwd[i].join(":")
+  }
+  await fs.writeFileSync("/etc/passwd", passwd.join("\n"))
+
+  console.log("checking groups")
+  group = await fs.readFileSync("/etc/group").split("\n");
+  for (let i = 0; i < group.length; i++) {
+    group[i] = group[i].split(':');
+    if (OS == 'ubuntu') { // TODO: check that these groups are the right ones to edit.
+      if (group[i][0].includes('adm') || group[i][0].includes('sudo')) {
+        group[3] = admins.join(",")
+      }
+    } else if (OS == 'debian') {
+      if (group[i][0].includes('adm') || group[i][0].includes('sudo')) {
+        group[3] = admins.join(",")
+      }
+    }
+    group[i] = group[i].join(":")
+  }
+  await fs.writeFileSync("/etc/group", group.join("\n"))
+
+  console.log("lynis system report:")
+  await simpleExec('git clone https://github.com/CISOfy/lynis')
+  await simpleExec('chmod 777 lynis/lynis')
+  console.log(await simpleExec('./lynis/lynis audit system'))
+
+  console.log("scanning for prohibited files. This could take a while.")
+  await findFiles("/");
+  for (let i = 0; i < files.length; i++) {
+    for (let j = 0; j < prohibitedFiles.length; j++) {
+      if (files[i].includes(prohibitedFiles[j])) {
+        badFiles.push(files[i])
+        break
+      }
+    }
+  }
+  console.log("rm -rf "+badFiles.join(' '))
+
+  console.log("scanning for prohibited programs.")
+
+  // TODO: Use dpkg to list programs and then analyze. Need a example output to use for running. test vm.
+
+  console.log("What to do next:\nCheck crontabs\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and lynis report.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.")
 })();
 
 /* Old shellscript code:
 
-sudo su -
-apt-get install clamtk ufw
+su -
+apt -y install clamtk ufw
 ufw enable
 
 
@@ -116,6 +202,6 @@ do
     HASH=$(echo "$USERPW" | openssl passwd -1 -stdin)
     # single quotes around hash, so coincidental
     # stuff like $1 in the pw hash survives
-    sudo usermod --password '$HASH' $_user"
+    usermod --password '$HASH' $_user"
 done
 */
