@@ -140,23 +140,17 @@ async function modifyLines(fileName, lines) {
     passwd[i] = passwd[i].split(':');
     seenUsers.push(passwd[i][0])
 
-    if (passwd[i][2] > 1000 && standardUsers.indexOf(passwd[i][0]) > -1) {
+    if (passwd[i][2] > 1000 && allUsers.indexOf(passwd[i][0]) > -1 && passwd[i][0].toLowerCase() != you.toLowerCase()) {
       await simpleExec('echo \"'+passwd[i][0]+':'+password+'\" | chpasswd')
-    } else if (passwd[i][2] > 1000 && standardUsers.indexOf(passwd[i][0]) < 0) {
-      console.log("this user likely needs to be deleted"+passwd[i][0])
-    } else if (passwd[i][2] < 1000 && standardUsers.indexOf(passwd[i][0]) > -1) {
+    } else if (passwd[i][2] > 1000 && allUsers.indexOf(passwd[i][0]) < 0) {
+      console.log("This user likely needs to be deleted "+passwd[i][0])
+    } else if (passwd[i][2] < 1000 && allUsers.indexOf(passwd[i][0]) > -1) {
       console.log("This user looks a bit weird due to UID: "+passwd[i].join(":"))
     } else {
       await simpleExec('usermod --shell /sbin/nologin '+passwd[i][0])
     }
 
     passwd[i] = passwd[i].join(":")
-  }
-
-  for (var i = 0; i < allUsers.length; i++) {
-    if (seenUsers.indexOf(allUsers[i]) < 0) {
-      simpleExec('echo \"'+passwd[i][0]+':'+password+'\" | chpasswd')
-    }
   }
 
   console.log("checking groups")
@@ -176,7 +170,7 @@ async function modifyLines(fileName, lines) {
 
   console.log("lynis system report:")
   await simpleExec('git clone https://github.com/CISOfy/lynis')
-  await simpleExec('chmod 777 lynis/lynis')
+  await simpleExec('chmod 777 -R lynis')
   await simpleExec('cd lynis')
   console.log(await simpleExec('./lynis audit system'))
 
@@ -197,7 +191,7 @@ async function modifyLines(fileName, lines) {
 
   console.log("\n\n\nThe script is mostly done now. It will now scan for prohibited files but this will take a long time.\n\nWhat to do next:\nUpdate the system using apt update and apt dist-upgrade\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and lynis report.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
 
-  console.log("scanning for prohibited files. This could take a while.")
+  console.log("\nscanning for prohibited files. This could take a while.")
   await findFiles("/");
   console.log(badFiles.join('\n'))
   console.log("rm -rf "+badFiles.join(' '))
