@@ -169,18 +169,6 @@ async function modifyLines(fileName, lines) {
   await simpleExec('chmod 777 lynis/lynis')
   console.log(await simpleExec('./lynis/lynis audit system'))
 
-  console.log("scanning for prohibited files. This could take a while.")
-  await findFiles("/");
-  for (let i = 0; i < files.length; i++) {
-    for (let j = 0; j < prohibitedFiles.length; j++) {
-      if (files[i].toLowerCase().includes(prohibitedFiles[j].toLowerCase())) {
-        badFiles.push(files[i])
-        break
-      }
-    }
-  }
-  console.log("rm -rf "+badFiles.join(' '))
-
   console.log("scanning for prohibited programs.")
 
   dpkgList = (await simpleExec('dpkg -l')).split('\n')
@@ -196,5 +184,17 @@ async function modifyLines(fileName, lines) {
 
   console.log(badSoftware.join('\n'))
 
-  console.log("What to do next:\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and lynis report.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.")
+  console.log("scanning for prohibited files. This could take a while.")
+  await findFiles("/");
+  for (let i = 0; i < files.length; i++) {
+    for (let j = 0; j < prohibitedFiles.length; j++) {
+      if (files[i].toLowerCase().includes(prohibitedFiles[j].toLowerCase())) {
+        badFiles.push(files[i])
+        break
+      }
+    }
+  }
+  console.log("rm -rf "+badFiles.join(' '))
+
+  console.log(\n\n\n"What to do next:\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and lynis report.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
 })();
