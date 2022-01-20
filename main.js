@@ -11,9 +11,9 @@ let standardUsers = [""]
 let distro = "ubuntu" // Options: 'ubuntu' or 'debian'
 // Still options, but not needed to change:
 let password = "Cyb3rPatr!0t$" // this password is a bit short.
-let prohibitedSoftware = ["hydra"] // TODO: find a good list for this.
+let prohibitedSoftware = ["hydra", "lib"] // TODO: find a good list for this.
 let prohibitedFiles = [".mp4", ".mp3"] // TODO: find a good list for this.
-let debug = true // currently makes simpleExec log all stdout
+let debug = false // currently makes simpleExec log all stdout
 
 
 // code:
@@ -129,7 +129,7 @@ async function modifyLines(fileName, lines) {
   ["net.ipv6.conf.default.disable_ipv6", "net.ipv6.conf.default.disable_ipv6=1"],
   ["net.ipv6.conf.lo.disable_ipv6", "net.ipv6.conf.lo.disable_ipv6=1"]])
 
-  console.log("Programs listening to ports:\n use `lsof -i :$port` to determine the program listening.")
+  console.log("Programs listening to ports:\nuse `lsof -i :$port` to determine the program listening.")
   ports = (await simpleExec('ss -ln')).split("\n")
   for (var i = 0; i < ports.length; i++) {
     if (ports[i].toLowerCase().includes("127.0.0.1".toLowerCase()) && ports[i].toLowerCase().includes("LISTEN".toLowerCase())) {
@@ -137,12 +137,12 @@ async function modifyLines(fileName, lines) {
     }
   }
 
-  console.log("checking user accounts. Delete users with userdel --remove $user")
+  console.log("\nchecking user accounts. Delete users with userdel --remove $user")
   passwd = await fs.readFileSync("/etc/passwd").toString()
   oddUsers = []
   await fs.writeFileSync("passwd_backup", passwd)
   passwd = passwd.split("\n")
-  for (let i = 0; i < passwd.length; i++) {
+  for (let i = 0; i < passwd.length-1; i++) {
     passwd[i] = passwd[i].split(':');
     seenUsers.push(passwd[i][0])
 
@@ -155,7 +155,7 @@ async function modifyLines(fileName, lines) {
       console.log("This user looks a bit weird due to UID: "+passwd[i].join(":"))
     } else if (passwd[i][2] < 1000) {
       await simpleExec('usermod --shell /sbin/nologin '+passwd[i][0])
-      console.log("User changed: "+passwd[i][0])
+      console.log("User changed: "+passwd[i][0]+':'+passwd[i][2])
     } else {
       oddUsers.push(passwd[i][0])
     }
@@ -182,7 +182,7 @@ async function modifyLines(fileName, lines) {
   }
   await fs.writeFileSync("/etc/group", group.join("\n"))
 
-  console.log("lynis system report:")
+  console.log("installing lynis")
   await simpleExec('git clone https://github.com/CISOfy/lynis')
   await simpleExec('chmod 777 -R lynis')
   await simpleExec('chown -R '+you+':'+you+' lynis')
