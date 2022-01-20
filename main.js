@@ -70,7 +70,7 @@ async function modifyLines(fileName, lines) {
 }
 
 (async () => {
-  console.log("Installing needed programs and doing system updates. This could take a very long time. On my test vm it took over a hour.")
+  console.log("Installing needed programs.")
   await simpleExec('apt -y update')
   await simpleExec('apt -y install clamtk ufw libpam-cracklib git')
   console.log("enabling firewall.")
@@ -98,7 +98,7 @@ async function modifyLines(fileName, lines) {
   ["SYSLOG_SG_ENAB", "SYSLOG_SG_ENAB YES"]])
   await modifyLines("/etc/pam.d/common-password", [["pam_unix.so", "password   required   pam_unix.so minlen=8 remember=5"], ["pam.cracklib.so","password   required   pam_cracklib.so ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1"]])
   await modifyLines("/etc/pam.d/common-auth", [["pam_tally2.so", "auth required pam_tally2.so  file=/var/log/tallylog deny=3 even_deny_root unlock_time=1800"]])
-  await simpleExec('Sysctl -p')
+  await simpleExec('sysctl -p')
   await modifyLines("/etc/sysctl.conf", [["net.ipv4.conf.all.accept_redirects", "net.ipv4.conf.all.accept_redirects = 0"],
   ["net.ipv4.ip_forward", "net.ipv4.ip_forward = 0"],
   ["net.ipv4.conf.all.send_redirects", "net.ipv4.conf.all.send_redirects = 0"],
@@ -122,7 +122,7 @@ async function modifyLines(fileName, lines) {
   }
 
   console.log("checking user accounts")
-  passwd = await fs.readFileSync("/etc/passwd").split("\n");
+  passwd = await fs.readFileSync("/etc/passwd").toString().split("\n");
   for (let i = 0; i < passwd.length; i++) {
     passwd[i] = passwd[i].split(':');
     seenUsers.push(passwd[i][0])
@@ -147,7 +147,7 @@ async function modifyLines(fileName, lines) {
   }
 
   console.log("checking groups")
-  group = await fs.readFileSync("/etc/group").split("\n");
+  group = await fs.readFileSync("/etc/group").toString().split("\n");
   for (let i = 0; i < group.length; i++) {
     group[i] = group[i].split(':');
 
@@ -179,9 +179,7 @@ async function modifyLines(fileName, lines) {
 
   console.log(badSoftware.join('\n'))
 
-
   console.log("\n\n\nThe script is mostly done now. It will now scan for prohibited files but this will take a long time.\n\n What to do next:\nUpdate the system using apt update and apt dist-upgrade\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and lynis report.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
-
 
   console.log("scanning for prohibited files. This could take a while.")
   await findFiles("/");
