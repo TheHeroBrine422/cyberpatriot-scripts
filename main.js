@@ -1,3 +1,12 @@
+/*
+TODO:
+User checks (/etc/passwd and /etc/groups and /home)
+Program checks (dpkg and apt)
+Auto Updates (only possible through GUI AFAIK) and security upgrades
+apt upgrade and apt dist-upgrade
+https://github.com/CISOfy/Lynis
+*/
+
 let you = "hero"
 let users = [""]
 let admins = [you, ""]
@@ -17,7 +26,7 @@ async function simpleExec(cmd) {
 }
 
 async function modifyLines(fileName, lines) {
-  if (path.existsSync('fileName')) {
+  if (path.existsSync(fileName)) {
     file = fs.readFileSync(fileName).split("\n")
     for (var i = 0; i < lines.length; i++) {
       found = false
