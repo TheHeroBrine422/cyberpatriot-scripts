@@ -11,7 +11,7 @@ let standardUsers = [""]
 let distro = "ubuntu" // Options: 'ubuntu' or 'debian'
 // Still options, but not needed to change:
 let password = "Cyb3rPatr!0t$" // this password is a bit short.
-let prohibitedSoftware = [] // TODO: find a good list for this.
+let prohibitedSoftware = ["hydra"] // TODO: find a good list for this.
 let prohibitedFiles = [".mp4", ".mp3"] // TODO: find a good list for this.
 let debug = true // currently makes simpleExec log all stdout
 
@@ -31,8 +31,17 @@ let seenUsers = [];
 async function findFiles(Directory) { // https://stackoverflow.com/a/63111390
   fs.readdirSync(Directory).forEach(File => {
       const absolute = path.join(Directory, File);
-      if (fs.statSync(absolute).isDirectory()) findFiles(absolute);
-      else return files.push(absolute);
+      if (fs.statSync(absolute).isDirectory()) {
+        findFiles(absolute)
+      } else {
+          for (let j = 0; j < prohibitedFiles.length; j++) {
+            if (absolute.toLowerCase().includes(prohibitedFiles[j].toLowerCase())) {
+              badFiles.push(files[i])
+              break
+            }
+          }
+        return "";
+      }
   });
 }
 
@@ -121,7 +130,7 @@ async function modifyLines(fileName, lines) {
     }
   }
 
-  console.log("checking user accounts")
+  console.log("checking user accounts. Delete users with userdel --remove $user")
   passwd = await fs.readFileSync("/etc/passwd").toString().split("\n");
   for (let i = 0; i < passwd.length; i++) {
     passwd[i] = passwd[i].split(':');
@@ -130,7 +139,7 @@ async function modifyLines(fileName, lines) {
     if (passwd[i][2] > 1000 && standardUsers.indexOf(passwd[i][0]) > -1) {
       await simpleExec('echo \"'+passwd[i][0]+':'+password+'\" | chpasswd')
     } else if (passwd[i][2] > 1000 && standardUsers.indexOf(passwd[i][0]) < 0) {
-      await simpleExec('userdel --remove '+passwd[i][0])
+      console.log("this user likely needs to be deleted"+passwd[i][0])
     } else if (passwd[i][2] < 1000 && standardUsers.indexOf(passwd[i][0]) > -1) {
       console.log("This user looks a bit weird due to UID: "+passwd[i].join(":"))
     } else {
@@ -179,18 +188,10 @@ async function modifyLines(fileName, lines) {
 
   console.log(badSoftware.join('\n'))
 
-  console.log("\n\n\nThe script is mostly done now. It will now scan for prohibited files but this will take a long time.\n\n What to do next:\nUpdate the system using apt update and apt dist-upgrade\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and lynis report.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
+  console.log("\n\n\nThe script is mostly done now. It will now scan for prohibited files but this will take a long time.\n\nWhat to do next:\nUpdate the system using apt update and apt dist-upgrade\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and lynis report.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
 
   console.log("scanning for prohibited files. This could take a while.")
   await findFiles("/");
-  for (let i = 0; i < files.length; i++) {
-    for (let j = 0; j < prohibitedFiles.length; j++) {
-      if (files[i].toLowerCase().includes(prohibitedFiles[j].toLowerCase())) {
-        badFiles.push(files[i])
-        break
-      }
-    }
-  }
   console.log(badFiles.join('\n'))
   console.log("rm -rf "+badFiles.join(' '))
 
