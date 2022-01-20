@@ -47,7 +47,12 @@ async function findFiles(Directory) { // https://stackoverflow.com/a/63111390
 
 async function simpleExec(cmd) {
   try {
-    stdout = (await execSync(cmd)).toString()
+    stdout = await execSync(cmd, (err, stdout, stderr) => {
+      if (err) {
+       return stderr;
+      }
+      return stdout
+    });
     if (debug) {
       console.log(stdout)
     }
@@ -134,6 +139,7 @@ async function modifyLines(fileName, lines) {
 
   console.log("checking user accounts. Delete users with userdel --remove $user")
   passwd = await fs.readFileSync("/etc/passwd").toString()
+  oddUsers = []
   await fs.writeFileSync("passwd_backup", passwd)
   passwd = passwd.split("\n")
   for (let i = 0; i < passwd.length; i++) {
@@ -147,18 +153,18 @@ async function modifyLines(fileName, lines) {
       console.log("This user likely needs to be deleted "+passwd[i][0])
     } else if (passwd[i][2] < 1000 && allUsers.indexOf(passwd[i][0]) > -1) {
       console.log("This user looks a bit weird due to UID: "+passwd[i].join(":"))
-    } else {
+    } else if (passwd[i][2] < 1000) {
       await simpleExec('usermod --shell /sbin/nologin '+passwd[i][0])
       console.log("User changed: "+passwd[i][0])
+    } else {
+      oddUsers.push(passwd[i][0])
     }
 
     passwd[i] = passwd[i].join(":")
   }
 
-  for (var i = 0; i < seenUsers.length; i++) {
-    if (allUsers.indexOf(seenUsers[i]) < -1) {
-      console.log("Missing user or a service: "+seenUsers[i])
-    }
+  for (var i = 0; i < oddUsers.length; i++) {
+    console.log("Odd User: "+oddUsers[i])
   }
 
   console.log("checking groups")
