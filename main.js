@@ -18,7 +18,7 @@ let debug = true // currently makes simpleExec log all stdout
 
 
 // code:
-const { exec } = require('child_process');
+const { execSync } = require('child_process');
 const fs = require('fs')
 const path = require("path");
 
@@ -30,27 +30,26 @@ let badFiles = [];
 async function findFiles(Directory) { // https://stackoverflow.com/a/63111390
   fs.readdirSync(Directory).forEach(File => {
       const absolute = path.join(Directory, File);
-      if (fs.statSync(absolute).isDirectory()) return ThroughDirectory(absolute);
+      if (fs.statSync(absolute).isDirectory()) findFiles(absolute);
       else return files.push(absolute);
   });
 }
 
 async function simpleExec(cmd) {
-  return await exec(cmd, (err, stdout, stderr) => {
-    if (err) {
-      console.log(stderr)
-      return ""
-    }
+  try {
+    stdout =  await execSync(cmd)
     if (debug) {
       console.log(stdout)
     }
     return stdout
-  });
+  } catch (e) {
+    return e
+  }
 }
 
 async function modifyLines(fileName, lines) {
-  if (path.existsSync(fileName)) {
-    file = fs.readFileSync(fileName).split("\n")
+  if (fs.existsSync(fileName)) {
+    file = fs.readFileSync(fileName).toString().split("\n")
     for (var i = 0; i < lines.length; i++) {
       found = false
       for (var j = 0; j < file.length; j++) {
@@ -140,7 +139,7 @@ async function modifyLines(fileName, lines) {
     } else {
       // system account. Make sure shell is /sbin/nologin
     }
-    
+
     passwd[i] = passwd[i].join(":")
   }
   await fs.writeFileSync("/etc/passwd", passwd.join("\n"))
