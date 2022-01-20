@@ -9,7 +9,7 @@ Auto Updates (only possible through GUI AFAIK) and security upgrades
 let you = "hero"
 let admins = [you, ""]
 let standardUsers = [""]
-let OS = "ubuntu" // Options: 'ubuntu' or 'debian'
+let distro = "ubuntu" // Options: 'ubuntu' or 'debian'
 // Still options, but not needed to change:
 let password = "Cyb3rPatr!0t$" // this password is a bit short.
 let prohibitedSoftware = [] // TODO: find a good list for this.
@@ -149,15 +149,11 @@ async function modifyLines(fileName, lines) {
   group = await fs.readFileSync("/etc/group").split("\n");
   for (let i = 0; i < group.length; i++) {
     group[i] = group[i].split(':');
-    if (OS == 'ubuntu') { // TODO: check that these groups are the right ones to edit.
-      if (group[i][0].includes('adm') || group[i][0].includes('sudo')) {
-        group[3] = admins.join(",")
-      }
-    } else if (OS == 'debian') {
-      if (group[i][0].includes('adm') || group[i][0].includes('sudo')) {
-        group[3] = admins.join(",")
-      }
+
+    if (group[i][0].includes('adm') || group[i][0].includes('sudo')) {
+      group[3] = admins.join(",")
     }
+
     group[i] = group[i].join(":")
   }
   await fs.writeFileSync("/etc/group", group.join("\n"))
