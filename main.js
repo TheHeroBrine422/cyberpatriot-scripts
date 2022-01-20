@@ -30,7 +30,7 @@ let badFiles = [];
 async function findFiles(Directory) { // https://stackoverflow.com/a/63111390
   fs.readdirSync(Directory).forEach(File => {
       const absolute = path.join(Directory, File);
-      if (fs.statSync(absolute).isDirectory()) return await ThroughDirectory(absolute);
+      if (fs.statSync(absolute).isDirectory()) return ThroughDirectory(absolute);
       else return files.push(absolute);
   });
 }
