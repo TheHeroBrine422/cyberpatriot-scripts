@@ -8,8 +8,8 @@ https://github.com/CISOfy/Lynis
 */
 
 let you = "hero"
-let users = [""]
 let admins = [you, ""]
+let users = [admins..., ""]
 let password = "Cyb3rPatr!0t$"
 
 const { exec } = require('child_process');
