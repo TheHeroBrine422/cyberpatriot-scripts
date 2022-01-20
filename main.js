@@ -142,15 +142,23 @@ async function modifyLines(fileName, lines) {
 
     if (passwd[i][2] > 1000 && allUsers.indexOf(passwd[i][0]) > -1 && passwd[i][0].toLowerCase() != you.toLowerCase()) {
       await simpleExec('echo \"'+passwd[i][0]+':'+password+'\" | chpasswd')
+      console.log("User password changed: "+passwd[i][0])
     } else if (passwd[i][2] > 1000 && allUsers.indexOf(passwd[i][0]) < 0) {
       console.log("This user likely needs to be deleted "+passwd[i][0])
     } else if (passwd[i][2] < 1000 && allUsers.indexOf(passwd[i][0]) > -1) {
       console.log("This user looks a bit weird due to UID: "+passwd[i].join(":"))
     } else {
       await simpleExec('usermod --shell /sbin/nologin '+passwd[i][0])
+      console.log("User changed: "+passwd[i][0])
     }
 
     passwd[i] = passwd[i].join(":")
+  }
+
+  for (var i = 0; i < seenUsers.length; i++) {
+    if (allUsers.indexOf(seenUsers[i]) < -1) {
+      console.log("Missing user or a service: "+seenUsers[i])
+    }
   }
 
   console.log("checking groups")
@@ -172,8 +180,6 @@ async function modifyLines(fileName, lines) {
   await simpleExec('git clone https://github.com/CISOfy/lynis')
   await simpleExec('chmod 777 -R lynis')
   await simpleExec('chown -R '+you+':'+you+' lynis')
-  await simpleExec('cd lynis')
-  console.log(await simpleExec('./lynis audit system'))
 
   console.log("scanning for prohibited programs.")
 
@@ -190,7 +196,7 @@ async function modifyLines(fileName, lines) {
 
   console.log(badSoftware.join('\n'))
 
-  console.log("\n\n\nThe script is mostly done now. It will now scan for prohibited files but this will take a long time.\n\nWhat to do next:\nUpdate the system using apt update and apt dist-upgrade\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and lynis report.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
+  console.log("\n\n\nThe script is mostly done now. It will now scan for prohibited files but this will take a long time.\n\nWhat to do next:\nRun lynis. It has already been installed. ./lynis aduit system\nUpdate the system using apt update and apt dist-upgrade\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and lynis report.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
 
   console.log("\nscanning for prohibited files. This could take a while.")
   await findFiles("/");
