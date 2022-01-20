@@ -131,7 +131,9 @@ async function modifyLines(fileName, lines) {
   }
 
   console.log("checking user accounts. Delete users with userdel --remove $user")
-  passwd = await fs.readFileSync("/etc/passwd").toString().split("\n");
+  passwd = await fs.readFileSync("/etc/passwd").toString()
+  await fs.writeFileSync("passwd_backup", passwd)
+  passwd = passwd.split("\n")
   for (let i = 0; i < passwd.length; i++) {
     passwd[i] = passwd[i].split(':');
     seenUsers.push(passwd[i][0])
@@ -156,7 +158,9 @@ async function modifyLines(fileName, lines) {
   }
 
   console.log("checking groups")
-  group = await fs.readFileSync("/etc/group").toString().split("\n");
+  group = await fs.readFileSync("/etc/group").toString()
+  await fs.writeFileSync("group_backup", group)
+  group = group.split("\n")
   for (let i = 0; i < group.length; i++) {
     group[i] = group[i].split(':');
 
