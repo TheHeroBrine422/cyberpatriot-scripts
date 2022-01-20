@@ -70,18 +70,13 @@ async function modifyLines(fileName, lines) {
 }
 
 (async () => {
-  console.log("Installing needed programs and doing system updates.")
+  console.log("Installing needed programs and doing system updates. This could take a very long time. On my test vm it took over a hour.")
   await simpleExec('apt -y update')
-  await simpleExec('apt -y dist-upgrade') // make sure everything gets fully updated by running multiple times. This is probably excessive, but I want to triple check.
-  await simpleExec('apt -y update')
-  await simpleExec('apt -y dist-upgrade')
   await simpleExec('apt -y install clamtk ufw libpam-cracklib git')
-  await simpleExec('apt -y update')
-  await simpleExec('apt -y dist-upgrade')
   console.log("enabling firewall.")
   await simpleExec('ufw enable')
-  await simpleExec('passwd -l root')
   console.log("basic configuration (sshd, lightdm, password settings and lockout)")
+  await simpleExec('passwd -l root')
   await simpleExec('chmod 640 /etc/shadow')
   await modifyLines("/etc/ssh/sshd_config", [["PermitRootLogin", "PermitRootLogin no"],
   ["LoginGraceTime", "LoginGraceTime 60"],
@@ -184,6 +179,10 @@ async function modifyLines(fileName, lines) {
 
   console.log(badSoftware.join('\n'))
 
+
+  console.log("\n\n\nThe script is mostly done now. It will now scan for prohibited files but this will take a long time.\n\n What to do next:\nUpdate the system using apt update and apt dist-upgrade\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and lynis report.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
+
+
   console.log("scanning for prohibited files. This could take a while.")
   await findFiles("/");
   for (let i = 0; i < files.length; i++) {
@@ -194,7 +193,7 @@ async function modifyLines(fileName, lines) {
       }
     }
   }
+  console.log(badFiles.join('\n'))
   console.log("rm -rf "+badFiles.join(' '))
 
-  console.log(\n\n\n"What to do next:\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and lynis report.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
 })();
