@@ -171,6 +171,7 @@ async function modifyLines(fileName, lines) {
   console.log("lynis system report:")
   await simpleExec('git clone https://github.com/CISOfy/lynis')
   await simpleExec('chmod 777 -R lynis')
+  await simpleExec('chown -R '+you+':'+you+' lynis')
   await simpleExec('cd lynis')
   console.log(await simpleExec('./lynis audit system'))
 
