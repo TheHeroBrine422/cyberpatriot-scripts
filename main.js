@@ -130,7 +130,7 @@ async function modifyLines(fileName, lines) {
   ["net.ipv6.conf.lo.disable_ipv6", "net.ipv6.conf.lo.disable_ipv6=1"]])
 
   console.log("Programs listening to ports:\nuse `lsof -i :$port` to determine the program listening.")
-  ports = (await simpleExec('ss -ln'))
+  ports = (await simpleExec('ss -ln')).toString()
   ports = ports.split("\n")
   for (var i = 0; i < ports.length; i++) {
     if (ports[i].toLowerCase().includes("127.0.0.1".toLowerCase()) && ports[i].toLowerCase().includes("LISTEN".toLowerCase())) {
