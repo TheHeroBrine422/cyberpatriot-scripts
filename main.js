@@ -59,7 +59,9 @@ async function simpleExec(cmd) {
 
 async function modifyLines(fileName, lines) {
   if (fs.existsSync(fileName)) {
-    file = fs.readFileSync(fileName).toString().split("\n")
+    file = fs.readFileSync(fileName).toString()
+    await fs.writeFileSync(fileName.replace(/\//g, '-')+"_backup", file)
+    file = file.split("\n")
     for (var i = 0; i < lines.length; i++) {
       found = false
       for (var j = 0; j < file.length; j++) {
@@ -175,7 +177,8 @@ async function modifyLines(fileName, lines) {
   console.log("lynis system report:")
   await simpleExec('git clone https://github.com/CISOfy/lynis')
   await simpleExec('chmod 777 lynis/lynis')
-  console.log(await simpleExec('./lynis/lynis audit system'))
+  await simpleExec('cd lynis')
+  console.log(await simpleExec('./lynis audit system'))
 
   console.log("scanning for prohibited programs.")
 
