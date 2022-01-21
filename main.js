@@ -112,7 +112,7 @@ async function modifyLines(fileName, lines) {
   ["LOG_UNKFAIL_ENAB", "LOG_UNKFAIL_ENAB YES"],
   ["SYSLOG_SU_ENAB", "SYSLOG_SU_ENAB YES"],
   ["SYSLOG_SG_ENAB", "SYSLOG_SG_ENAB YES"]])
-  await modifyLines("/etc/pam.d/common-password", [["pam_unix.so", "password   required   pam_unix.so minlen=8 remember=5"], ["pam.cracklib.so","password   required   pam_cracklib.so ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1"]])
+  await modifyLines("/etc/pam.d/common-password", [["pam_unix.so", "password  [success=1 default=ignore]  pam_unix.so obscure use_authtok try_first_pass sha512 minlen=8 remember=5"], ["pam_cracklib.so","password   requisite   pam_cracklib.so retry=3 minlen=8 difok=3 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1"]])
   await modifyLines("/etc/pam.d/common-auth", [["pam_tally2.so", "auth required pam_tally2.so  file=/var/log/tallylog deny=3 even_deny_root unlock_time=1800"]])
   await simpleExec('sysctl -p')
   await modifyLines("/etc/sysctl.conf", [["net.ipv4.conf.all.accept_redirects", "net.ipv4.conf.all.accept_redirects = 0"],
@@ -176,7 +176,7 @@ async function modifyLines(fileName, lines) {
     group[i] = group[i].split(':');
 
     if (group[i][0].includes('adm') || group[i][0].includes('sudo')) {
-      group[3] = admins.join(",")
+      group[3] = "syslog,"+admins.join(",")
     }
 
     group[i] = group[i].join(":")
