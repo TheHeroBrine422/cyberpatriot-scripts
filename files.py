@@ -9,11 +9,10 @@ def findFiles(dir):
             path = dir+file
             if (os.path.isdir(path) and path != '/proc'):
                 findFiles(path+"/")
-            else:
-                for test in prohibitedFiles:
-                    if test.lower() in path.lower():
-                        print(path)
-                        break
+            for test in prohibitedFiles:
+                if path.lower().find(test.lower()) > -1:
+                    print(path)
+                    break
     except:
         pass
 
