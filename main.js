@@ -49,9 +49,9 @@ async function simpleExec(cmd) {
   try {
     stdout = await execSync(cmd, (err, stdout, stderr) => {
       if (err) {
-       return stderr;
+       return stderr.toString();
       }
-      return stdout
+      return stdout.toString()
     });
     if (debug) {
       console.log(stdout)
@@ -149,14 +149,14 @@ async function modifyLines(fileName, lines) {
 
     if (passwd[i][2] > 1000 && allUsers.indexOf(passwd[i][0]) > -1 && passwd[i][0].toLowerCase() != you.toLowerCase()) {
       await simpleExec('echo \"'+passwd[i][0]+':'+password+'\" | chpasswd')
-      console.log("User password changed: "+passwd[i][0])
+      //console.log("User password changed: "+passwd[i][0])
     } else if (passwd[i][2] > 1000 && allUsers.indexOf(passwd[i][0]) < 0) {
       console.log("This user likely needs to be deleted "+passwd[i][0])
     } else if (passwd[i][2] < 1000 && allUsers.indexOf(passwd[i][0]) > -1) {
       console.log("This user looks a bit weird due to UID: "+passwd[i].join(":"))
     } else if (passwd[i][2] < 1000) {
       await simpleExec('usermod --shell /sbin/nologin '+passwd[i][0])
-      console.log("User changed: "+passwd[i][0]+':'+passwd[i][2])
+      //console.log("User changed: "+passwd[i][0]+':'+passwd[i][2])
     } else {
       oddUsers.push(passwd[i][0])
     }
@@ -190,7 +190,7 @@ async function modifyLines(fileName, lines) {
 
   console.log("scanning for prohibited programs.")
 
-  dpkgList = (await simpleExec('dpkg -l')).split('\n')
+  dpkgList = (await simpleExec('dpkg -l')).toString().split('\n')
 
   for (let i = 0; i < dpkgList.length; i++) {
     for (let j = 0; j < prohibitedSoftware.length; j++) {
