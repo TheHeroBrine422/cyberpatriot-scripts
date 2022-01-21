@@ -18,7 +18,7 @@ let debug = false // currently makes simpleExec log all stdout
 
 
 // code:
-const { execSync } = require('child_process');
+const { execSync, exec } = require('child_process');
 const fs = require('fs')
 const path = require("path");
 
@@ -176,7 +176,7 @@ async function modifyLines(fileName, lines) {
     group[i] = group[i].split(':');
 
     if (group[i][0].includes('adm') || group[i][0].includes('sudo')) {
-      group[3] = "syslog,"+admins.join(",")
+      group[i][3] = "syslog,"+admins.join(",")
     }
 
     group[i] = group[i].join(":")
@@ -201,11 +201,18 @@ async function modifyLines(fileName, lines) {
     }
   }
 
-  console.log(badSoftware.join('\n'))
+  await console.log(badSoftware.join('\n'))
 
-  console.log("\n\n\nThe script is mostly done now. It will now scan for prohibited files but this will take a long time.\n\nWhat to do next:\nRun lynis. It has already been installed. ./lynis aduit system\nUpdate the system using apt update and apt dist-upgrade\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and users.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
+  await console.log("\n\n\nThe script is mostly done now. It will now scan for prohibited files but this will take a long time.\n\nWhat to do next:\nRun lynis. It has already been installed. ./lynis aduit system\nUpdate the system using apt update and apt dist-upgrade\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and users.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
 
   console.log("\nscanning for prohibited files. This could take a while.")
-  await execSync('python3 files.py')
+  exec('python3 files.py', (error, stdout, stderr) => {
+  if (error) {
+    console.error(`exec error: ${error}`);
+    return;
+  }
+  console.log(`stdout: ${stdout}`);
+  console.error(`stderr: ${stderr}`);
+});
 
 })();

@@ -7,8 +7,8 @@ def findFiles(dir):
         files = os.listdir(dir)
         for file in files:
             path = dir+file
-            if (os.path.isdir(path)):
-                findFiles(path)
+            if (os.path.isdir(path) and path != '/proc'):
+                findFiles(path+"/")
             else:
                 for test in prohibitedFiles:
                     if test.lower() in path.lower():
