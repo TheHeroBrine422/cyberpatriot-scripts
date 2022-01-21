@@ -1,6 +1,7 @@
 /*
 TODO:
-Test everything.
+Test changing user passwords and setting admin groups.
+Test Prohibited files scan. Have never actually let it finish.
 Auto Updates (only possible through GUI AFAIK) and security upgrades
 */
 
@@ -24,7 +25,6 @@ const path = require("path");
 let allUsers = admins.join(standardUsers);
 let uids = [];
 let files = [];
-let badFiles = [];
 let badSoftware = [];
 let seenUsers = [];
 
@@ -36,7 +36,7 @@ async function findFiles(Directory) { // https://stackoverflow.com/a/63111390
       } else {
           for (let j = 0; j < prohibitedFiles.length; j++) {
             if (absolute.toLowerCase().includes(prohibitedFiles[j].toLowerCase())) {
-              badFiles.push(files[i])
+              console.log(files[i])
               break
             }
           }
@@ -203,11 +203,9 @@ async function modifyLines(fileName, lines) {
 
   console.log(badSoftware.join('\n'))
 
-  console.log("\n\n\nThe script is mostly done now. It will now scan for prohibited files but this will take a long time.\n\nWhat to do next:\nRun lynis. It has already been installed. ./lynis aduit system\nUpdate the system using apt update and apt dist-upgrade\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and lynis report.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
+  console.log("\n\n\nThe script is mostly done now. It will now scan for prohibited files but this will take a long time.\n\nWhat to do next:\nRun lynis. It has already been installed. ./lynis aduit system\nUpdate the system using apt update and apt dist-upgrade\nCheck crontabs and services\nEnable auto updates and auto software updates.\nCheck above suggested files, programs, and users.\nDouble check /etc/passwd and /etc/group\nDouble check installed programs and files.\nAlso might want to make sure the system reboots properly when you reboot to make sure none of the updates or config file changes failed.")
 
   console.log("\nscanning for prohibited files. This could take a while.")
   await findFiles("/");
-  console.log(badFiles.join('\n'))
-  console.log("rm -rf "+badFiles.join(' '))
 
 })();
